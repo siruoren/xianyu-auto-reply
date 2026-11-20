@@ -3,13 +3,11 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { useAuthStore } from '@/store/authStore'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { Toast } from '@/components/common/Toast'
-import { DisclaimerModal } from '@/components/common/DisclaimerModal'
 import { verifyToken } from '@/api/auth'
-import { getHiddenMenuKeysFromSettings, getPublicSystemSettings, getSystemSettings, getUserSetting, normalizeDisclaimerSettings, updateUserSetting } from '@/api/settings'
+import { getHiddenMenuKeysFromSettings, getPublicSystemSettings, getSystemSettings } from '@/api/settings'
 import { getMenuAccessFallbackPath, isPathBlockedForUser } from '@/config/navigation'
 import { useMenuVisibilityStore } from '@/store/menuVisibilityStore'
 import { applyThemeSettings, initializeThemeMode } from '@/utils/theme'
-import type { DisclaimerSettings } from '@/types'
 
 // 登录/注册/激活码页面保持同步导入（首屏必需）
 import { Login } from '@/pages/auth/Login'
@@ -22,7 +20,6 @@ import { GetSourceCode } from '@/pages/auth/GetSourceCode'
 
 // 页面组件懒加载，按需加载提升首屏速度
 const Dashboard = React.lazy(() => import('@/pages/dashboard/Dashboard').then(m => ({ default: m.Dashboard })))
-const Home = React.lazy(() => import('@/pages/home/Home').then(m => ({ default: m.Home })))
 const OnlineInstall = React.lazy(() => import('@/pages/online-install/OnlineInstall').then(m => ({ default: m.OnlineInstall })))
 const DataOverview = React.lazy(() => import('@/pages/data_analysis/DataOverview').then(m => ({ default: m.DataOverview })))
 const Accounts = React.lazy(() => import('@/pages/accounts/Accounts').then(m => ({ default: m.Accounts })))
@@ -118,19 +115,13 @@ function PageLoading() {
   )
 }
 
-// 免责声明同意状态的 key
-const DISCLAIMER_AGREED_KEY = 'disclaimer_agreed'
-
 // Protected route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, setAuth, clearAuth, token: storeToken, _hasHydrated } = useAuthStore()
   const { hiddenMenuKeys, isExeMode, setHiddenMenuKeys, setIsExeMode } = useMenuVisibilityStore()
   const location = useLocation()
   const [authState, setAuthState] = useState<'checking' | 'authenticated' | 'unauthenticated'>('checking')
-  const [disclaimerState, setDisclaimerState] = useState<'checking' | 'agreed' | 'pending'>('checking')
   const [menuState, setMenuState] = useState<'checking' | 'ready'>('checking')
-  const [showDisclaimer, setShowDisclaimer] = useState(false)
-  const [disclaimerSettings, setDisclaimerSettings] = useState<DisclaimerSettings>(() => normalizeDisclaimerSettings())
   const checkingRef = useRef(false)
 
   useEffect(() => {
@@ -169,36 +160,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
             account_limit: result.account_limit,
           })
           setAuthState('authenticated')
-          
-          // 检查免责声明同意状态
-          try {
-            const settingResult = await getUserSetting(DISCLAIMER_AGREED_KEY)
-            if (settingResult.success && settingResult.value === 'true') {
-              setDisclaimerState('agreed')
-            } else {
-              setDisclaimerState('pending')
-              setShowDisclaimer(true)
-            }
-          } catch {
-            // 设置不存在，需要显示免责声明
-            setDisclaimerState('pending')
-            setShowDisclaimer(true)
-          }
 
           try {
             const settingsResult = await getSystemSettings()
             if (settingsResult.success && settingsResult.data) {
               applyThemeSettings(settingsResult.data)
-              setDisclaimerSettings(normalizeDisclaimerSettings(settingsResult.data))
               setIsExeMode(Boolean(settingsResult.data['runtime.is_exe_mode']))
               setHiddenMenuKeys(getHiddenMenuKeysFromSettings(settingsResult.data))
             } else {
-              setDisclaimerSettings(normalizeDisclaimerSettings())
               setIsExeMode(false)
               setHiddenMenuKeys([])
             }
           } catch {
-            setDisclaimerSettings(normalizeDisclaimerSettings())
             setIsExeMode(false)
             setHiddenMenuKeys([])
           } finally {
@@ -221,26 +194,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     checkAuth()
   }, [_hasHydrated, isAuthenticated, storeToken, setAuth, clearAuth, setHiddenMenuKeys, setIsExeMode])
 
-  // 同意免责声明
-  const handleAgreeDisclaimer = async () => {
-    try {
-      await updateUserSetting(DISCLAIMER_AGREED_KEY, 'true', '用户已同意免责声明')
-      setDisclaimerState('agreed')
-      setShowDisclaimer(false)
-    } catch {
-      // 保存失败也允许继续使用
-      setDisclaimerState('agreed')
-      setShowDisclaimer(false)
-    }
-  }
-
-  // 不同意免责声明
-  const handleDisagreeDisclaimer = () => {
-    clearAuth()
-    setAuthState('unauthenticated')
-    setShowDisclaimer(false)
-  }
-
   // 等待 hydration 或检查完成
   if (!_hasHydrated || authState === 'checking' || menuState === 'checking') {
     return (
@@ -252,30 +205,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (authState === 'unauthenticated') {
     return <Navigate to="/login" replace />
-  }
-
-  // 未同意免责声明时显示弹窗，阻止使用系统
-  if (disclaimerState === 'pending' || showDisclaimer) {
-    return (
-      <>
-        <DisclaimerModal
-          isOpen={showDisclaimer}
-          settings={disclaimerSettings}
-          onAgree={handleAgreeDisclaimer}
-          onDisagree={handleDisagreeDisclaimer}
-        />
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900" />
-      </>
-    )
-  }
-
-  // 还在检查免责声明状态
-  if (disclaimerState === 'checking') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-      </div>
-    )
   }
 
   if (isPathBlockedForUser(location.pathname, hiddenMenuKeys, Boolean(user?.is_admin), isExeMode)) {
@@ -322,7 +251,8 @@ function App() {
       <Suspense fallback={<PageLoading />}>
         <Routes>
           {/* Public routes */}
-          <Route path="/" element={<Home />} />
+          {/* 主页直接显示登录页（Login 组件会自动跳转已登录用户到 dashboard） */}
+          <Route path="/" element={<Login />} />
           <Route path="/online-install" element={<OnlineInstall />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

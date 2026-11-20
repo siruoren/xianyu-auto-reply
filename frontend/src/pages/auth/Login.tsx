@@ -10,7 +10,6 @@ import { useUIStore } from '@/store/uiStore'
 import { cn } from '@/utils/cn'
 import { ButtonLoading } from '@/components/common/Loading'
 import { GeetestCaptcha, type GeetestResult } from '@/components/common/GeetestCaptcha'
-import { POPUP_ANNOUNCEMENT_SHOWN_KEY } from '@/components/common/PopupAnnouncementModal'
 import { LoginBrandingPanel, LoginMobileBranding } from './LoginBranding'
 import { useLoginPageSettings } from './useLoginPageSettings'
 import { useRegistrationStatus } from './useRegistrationStatus'
@@ -206,8 +205,6 @@ export function Login() {
       const result = await login(loginData)
 
       if (result.success && result.token && result.refresh_token) {
-        // 清除弹窗公告会话标记，确保本次登录后重新弹窗展示一次
-        sessionStorage.removeItem(POPUP_ANNOUNCEMENT_SHOWN_KEY)
         setAuth(result.token, result.refresh_token, {
           user_id: result.user_id!,
           username: result.username!,

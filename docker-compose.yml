@@ -24,7 +24,7 @@ services:
       - --max-allowed-packet=256M
       - --default-time-zone=+08:00
     volumes:
-      - mysql_data:/var/lib/mysql
+      - ./data/mysql:/var/lib/mysql
     networks:
       - xianyu-network
     healthcheck:
@@ -48,7 +48,7 @@ services:
     environment:
       - TZ=Asia/Shanghai
     volumes:
-      - redis_data:/data
+      - ./data/redis:/data
     networks:
       - xianyu-network
     healthcheck:
@@ -128,9 +128,9 @@ services:
       - TOKEN_CACHE_TTL_MAX_HOURS=${TOKEN_CACHE_TTL_MAX_HOURS:-10}
       - TZ=Asia/Shanghai
     volumes:
-      - backend_web_logs:/app/backend-web/logs
-      - static-files:/app/static
-      - backup-files:/app/backups
+      - ./data/logs/backend-web:/app/backend-web/logs
+      - ./data/static:/app/static
+      - ./data/backups:/app/backups
     ports:
       - "${BACKEND_WEB_PORT:-8089}:8089"
     networks:
@@ -201,9 +201,9 @@ services:
       - TOKEN_CACHE_TTL_MAX_HOURS=${TOKEN_CACHE_TTL_MAX_HOURS:-10}
       - TZ=Asia/Shanghai
     volumes:
-      - websocket_logs:/app/websocket/logs
-      - static-files:/app/static
-      - browser_data:/app/browser_data
+      - ./data/logs/websocket:/app/websocket/logs
+      - ./data/static:/app/static
+      - ./data/browser_data:/app/browser_data
     ports:
       - "${WEBSOCKET_PORT:-8090}:8090"
     networks:
@@ -272,9 +272,9 @@ services:
       - SQL_ECHO=${SQL_ECHO:-false}
       - TZ=Asia/Shanghai
     volumes:
-      - scheduler_logs:/app/scheduler/logs
-      - static-files:/app/static
-      - backup-files:/app/backups
+      - ./data/logs/scheduler:/app/scheduler/logs
+      - ./data/static:/app/static
+      - ./data/backups:/app/backups
     ports:
       - "${SCHEDULER_PORT:-8091}:8091"
     networks:
@@ -316,20 +316,5 @@ networks:
   xianyu-network:
     driver: bridge
 
-volumes:
-  mysql_data:
-    driver: local
-  redis_data:
-    driver: local
-  websocket_logs:
-    driver: local
-  backend_web_logs:
-    driver: local
-  scheduler_logs:
-    driver: local
-  static-files:
-    driver: local
-  backup-files:
-    driver: local
-  browser_data:
-    driver: local
+# 数据全部绑定挂载到本地 ./data 目录，镜像升级/重建容器不影响数据
+# 升级流程: git pull 更新源码 -> docker compose up -d --build -> 数据自动保留
