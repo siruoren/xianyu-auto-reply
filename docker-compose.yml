@@ -305,7 +305,7 @@ services:
     environment:
       - TZ=Asia/Shanghai
     ports:
-      - "${FRONTEND_PORT:-9000}:80"
+      - "${FRONTEND_PORT:-8091}:80"
     networks:
       - xianyu-network
     depends_on:
