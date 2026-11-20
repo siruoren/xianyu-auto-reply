@@ -5,6 +5,16 @@
 services:
   # ====== 基础设施 ======
 
+  # 通用基础镜像（预装 chromium/playwright，供 backend-web/websocket/scheduler 复用，
+  # 避免每个镜像构建重复安装 chromium），构建后立即退出，仅作为构建依赖
+  base:
+    build:
+      context: .
+      dockerfile: docker/base/Dockerfile
+    image: ${BASE_IMAGE:-xianyu-base:latest}
+    entrypoint: ["true"]
+    restart: "no"
+
   # MySQL数据库（默认从阿里云仓库拉取，可通过 MYSQL_IMAGE 覆盖）
   mysql:
     image: ${MYSQL_IMAGE:-registry.cn-shanghai.aliyuncs.com/zhinian-software/xianyu-mysql:8.0}
@@ -65,6 +75,8 @@ services:
     build:
       context: .
       dockerfile: backend-web/Dockerfile
+      args:
+        - BASE_IMAGE=${BASE_IMAGE:-xianyu-base:latest}
     container_name: xianyu-backend-web
     restart: unless-stopped
     environment:
@@ -136,6 +148,8 @@ services:
     networks:
       - xianyu-network
     depends_on:
+      base:
+        condition: service_completed_successfully
       mysql:
         condition: service_healthy
       redis:
@@ -152,6 +166,8 @@ services:
     build:
       context: .
       dockerfile: websocket/Dockerfile
+      args:
+        - BASE_IMAGE=${BASE_IMAGE:-xianyu-base:latest}
     container_name: xianyu-websocket
     restart: unless-stopped
     environment:
@@ -209,6 +225,8 @@ services:
     networks:
       - xianyu-network
     depends_on:
+      base:
+        condition: service_completed_successfully
       mysql:
         condition: service_healthy
       redis:
@@ -227,6 +245,8 @@ services:
     build:
       context: .
       dockerfile: scheduler/Dockerfile
+      args:
+        - BASE_IMAGE=${BASE_IMAGE:-xianyu-base:latest}
     container_name: xianyu-scheduler
     restart: unless-stopped
     environment:
@@ -280,6 +300,8 @@ services:
     networks:
       - xianyu-network
     depends_on:
+      base:
+        condition: service_completed_successfully
       mysql:
         condition: service_healthy
       redis:

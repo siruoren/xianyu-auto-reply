@@ -169,17 +169,22 @@ build_images() {
     echo -e "${YELLOW}[步骤 3/3] 从源码构建镜像（可能需要较长时间）...${NC}"
     echo ""
 
+    echo -e "${CYAN}>>> 构建通用基础镜像（chromium/playwright，各服务复用）...${NC}"
+    $DC_CMD build base
+    echo -e "${GREEN}✓ 基础镜像构建完成${NC}"
+    echo ""
+
     echo -e "${CYAN}>>> 构建 Backend-Web 镜像...${NC}"
     $DC_CMD build backend-web
     echo -e "${GREEN}✓ Backend-Web 镜像构建完成${NC}"
     echo ""
 
-    echo -e "${CYAN}>>> 构建 WebSocket 镜像（含Playwright）...${NC}"
+    echo -e "${CYAN}>>> 构建 WebSocket 镜像...${NC}"
     $DC_CMD build websocket
     echo -e "${GREEN}✓ WebSocket 镜像构建完成${NC}"
     echo ""
 
-    echo -e "${CYAN}>>> 构建 Scheduler 镜像（含Playwright）...${NC}"
+    echo -e "${CYAN}>>> 构建 Scheduler 镜像...${NC}"
     $DC_CMD build scheduler
     echo -e "${GREEN}✓ Scheduler 镜像构建完成${NC}"
     echo ""

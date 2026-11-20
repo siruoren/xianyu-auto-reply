@@ -43,6 +43,8 @@ echo -e "${GREEN}✓ 已停止${NC}"
 echo ""
 
 echo -e "${YELLOW}[2/3] 重新构建 Scheduler 镜像（--no-cache）...${NC}"
+# 服务镜像基于 xianyu-base（已预装 chromium），先确保基础镜像存在（有缓存则秒过）
+$DC_CMD build base
 $DC_CMD build --no-cache scheduler
 echo -e "${GREEN}✓ 构建完成${NC}"
 echo ""
