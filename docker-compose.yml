@@ -97,7 +97,7 @@ services:
       - REDIS_STARTUP_MAX_RETRIES=${REDIS_STARTUP_MAX_RETRIES:-5}
       - REDIS_STARTUP_RETRY_BASE_DELAY=${REDIS_STARTUP_RETRY_BASE_DELAY:-1}
       - REDIS_STARTUP_RETRY_CAP_DELAY=${REDIS_STARTUP_RETRY_CAP_DELAY:-10}
-      - BACKEND_WEB_PORT=8089
+      - BACKEND_WEB_PORT=8086
       - ONLINE_INSTALL_CONNECT_TIMEOUT=${ONLINE_INSTALL_CONNECT_TIMEOUT:-60}
       - ONLINE_INSTALL_TIMEOUT=${ONLINE_INSTALL_TIMEOUT:-7200}
       - ONLINE_INSTALL_RETENTION_SECONDS=${ONLINE_INSTALL_RETENTION_SECONDS:-86400}
@@ -107,8 +107,8 @@ services:
       - REFRESH_TOKEN_EXPIRE_MINUTES=${REFRESH_TOKEN_EXPIRE_MINUTES:-10080}
       - INTERNAL_API_TOKEN=${INTERNAL_API_TOKEN:-}
       - CORS_ORIGINS=*
-      - WEBSOCKET_SERVICE_URL=http://websocket:8090
-      - SCHEDULER_SERVICE_URL=http://scheduler:8091
+      - WEBSOCKET_SERVICE_URL=http://websocket:8087
+      - SCHEDULER_SERVICE_URL=http://scheduler:8088
       - FRONTEND_SERVICE_URL=${FRONTEND_SERVICE_URL:-http://frontend:80}
       - STATIC_DIR=/app/static
       - BACKUP_DIR=/app/backups
@@ -132,7 +132,7 @@ services:
       - ./data/static:/app/static
       - ./data/backups:/app/backups
     ports:
-      - "${BACKEND_WEB_PORT:-8089}:8089"
+      - "${BACKEND_WEB_PORT:-8086}:8086"
     networks:
       - xianyu-network
     depends_on:
@@ -141,7 +141,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8089/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -184,7 +184,7 @@ services:
       - REDIS_STARTUP_MAX_RETRIES=${REDIS_STARTUP_MAX_RETRIES:-5}
       - REDIS_STARTUP_RETRY_BASE_DELAY=${REDIS_STARTUP_RETRY_BASE_DELAY:-1}
       - REDIS_STARTUP_RETRY_CAP_DELAY=${REDIS_STARTUP_RETRY_CAP_DELAY:-10}
-      - WEBSOCKET_PORT=8090
+      - WEBSOCKET_PORT=8087
       - HOST=0.0.0.0
       - MAX_CAPTCHA_CONCURRENT=${MAX_CAPTCHA_CONCURRENT:-3}
       - BROWSER_HEADLESS=true
@@ -192,7 +192,7 @@ services:
       - CAPTCHA_DRISSIONPAGE_FALLBACK_ENABLED=${CAPTCHA_DRISSIONPAGE_FALLBACK_ENABLED:-false}
       - CAPTCHA_DRISSIONPAGE_TIMEOUT=${CAPTCHA_DRISSIONPAGE_TIMEOUT:-25}
       - CAPTCHA_DRISSIONPAGE_HEADLESS=${CAPTCHA_DRISSIONPAGE_HEADLESS:-true}
-      - BACKEND_WEB_SERVICE_URL=http://backend-web:8089
+      - BACKEND_WEB_SERVICE_URL=http://backend-web:8086
       - INTERNAL_API_TOKEN=${INTERNAL_API_TOKEN:-}
       - STATIC_DIR=/app/static
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
@@ -205,7 +205,7 @@ services:
       - ./data/static:/app/static
       - ./data/browser_data:/app/browser_data
     ports:
-      - "${WEBSOCKET_PORT:-8090}:8090"
+      - "${WEBSOCKET_PORT:-8087}:8087"
     networks:
       - xianyu-network
     depends_on:
@@ -216,7 +216,7 @@ services:
       backend-web:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8087/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -259,12 +259,12 @@ services:
       - REDIS_STARTUP_MAX_RETRIES=${REDIS_STARTUP_MAX_RETRIES:-5}
       - REDIS_STARTUP_RETRY_BASE_DELAY=${REDIS_STARTUP_RETRY_BASE_DELAY:-1}
       - REDIS_STARTUP_RETRY_CAP_DELAY=${REDIS_STARTUP_RETRY_CAP_DELAY:-10}
-      - SCHEDULER_PORT=8091
+      - SCHEDULER_PORT=8088
       - HOST=0.0.0.0
       - REDELIVERY_INTERVAL=${REDELIVERY_INTERVAL:-5}
       - RATE_INTERVAL=${RATE_INTERVAL:-20}
-      - WEBSOCKET_SERVICE_URL=http://websocket:8090
-      - BACKEND_WEB_SERVICE_URL=http://backend-web:8089
+      - WEBSOCKET_SERVICE_URL=http://websocket:8087
+      - BACKEND_WEB_SERVICE_URL=http://backend-web:8086
       - INTERNAL_API_TOKEN=${INTERNAL_API_TOKEN:-}
       - STATIC_DIR=/app/static
       - BACKUP_DIR=/app/backups
@@ -276,7 +276,7 @@ services:
       - ./data/static:/app/static
       - ./data/backups:/app/backups
     ports:
-      - "${SCHEDULER_PORT:-8091}:8091"
+      - "${SCHEDULER_PORT:-8088}:8088"
     networks:
       - xianyu-network
     depends_on:
@@ -289,7 +289,7 @@ services:
       backend-web:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8091/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -305,7 +305,7 @@ services:
     environment:
       - TZ=Asia/Shanghai
     ports:
-      - "${FRONTEND_PORT:-8808}:80"
+      - "${FRONTEND_PORT:-8089}:80"
     networks:
       - xianyu-network
     depends_on:
