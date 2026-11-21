@@ -304,6 +304,8 @@ services:
     restart: unless-stopped
     environment:
       - TZ=Asia/Shanghai
+      # nginx 反代目标端口，必须与 backend-web 容器内部端口一致
+      - BACKEND_WEB_PORT=${BACKEND_WEB_PORT:-8086}
     ports:
       - "${FRONTEND_PORT:-8089}:80"
     networks:

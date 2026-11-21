@@ -30,8 +30,8 @@ FROM nginx:alpine
 # 配置国内镜像源
 RUN sed -i 's|dl-cdn.alpinelinux.org|mirrors.aliyun.com|g' /etc/apk/repositories
 
-# 复制nginx配置
-COPY docker/frontend/nginx.conf /etc/nginx/conf.d/default.conf
+# 复制nginx配置（模板：启动时由官方镜像的 envsubst 机制用环境变量替换 ${BACKEND_WEB_PORT}）
+COPY docker/frontend/nginx.conf /etc/nginx/templates/default.conf.template
 
 # 复制构建产物（已混淆压缩，不含源码）
 COPY --from=builder /app/dist /usr/share/nginx/html
