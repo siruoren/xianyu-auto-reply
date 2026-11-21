@@ -49,6 +49,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev \
     && rm -rf /var/lib/apt/lists/* /root/.cache
 
 # 浏览器：playwright 安装系统依赖，patchright 复用同一套依赖，避免第二次 apt
+# libatomic1：playwright 的 node 驱动启动必需，必须在 playwright install 之前就位
+# （--with-deps 是 CLI 启动后才执行的，CLI 自身缺库时无法自救）；独立成层以保留上方缓存
+RUN apt-get update && apt-get install -y --no-install-recommends libatomic1 \
+    && rm -rf /var/lib/apt/lists/*
 RUN python -m playwright install --with-deps chromium \
     && python -m patchright install chromium \
     && rm -rf /var/lib/apt/lists/* /root/.cache/ms-playwright/.links
