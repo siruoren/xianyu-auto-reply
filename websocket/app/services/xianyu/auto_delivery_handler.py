@@ -28,7 +28,7 @@ from app.services.xianyu.yifan_api_handler import YifanApiHandler
 from common.db.compat import db_manager
 from common.services.order_service import OrderDetailService
 from common.utils.fish_nick_utils import get_buyer_fish_nick
-from common.utils.response_field import extract_card_api_response_content
+from common.utils.response_field import extract_card_api_response_content, render_api_content_template
 from common.utils.xianyu_utils import trans_cookies
 
 
@@ -3162,6 +3162,12 @@ class AutoDeliveryHandler(DeliveryPrecheckMixin):
 
             if status_code == 200:
                 content = extract_card_api_response_content(response_text, response_field)
+                # 内容模板（选填）：支持 {api_content} 与 {api_json.路径} 变量拼接，空模板保持原行为
+                content = render_api_content_template(
+                    api_config.get('content_template') or api_config.get('contentTemplate'),
+                    content,
+                    response_text,
+                )
                 logger.info(f"API调用成功，返回内容长度: {len(content)}")
                 return content
             else:

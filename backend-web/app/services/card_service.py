@@ -11,7 +11,7 @@ from loguru import logger
 
 from common.models.card import Card
 from common.services.card_matcher import CardMatcher
-from common.utils.response_field import extract_card_api_response_content
+from common.utils.response_field import extract_card_api_response_content, render_api_content_template
 
 
 from common.utils.time_utils import safe_isoformat
@@ -1032,7 +1032,13 @@ class CardService:
                 
                 response.raise_for_status()
                 response_field = config.get("response_field") or config.get("responseField")
-                return extract_card_api_response_content(response.text, response_field)
+                content = extract_card_api_response_content(response.text, response_field)
+                # 内容模板（选填）：让"测试"预览与实际发货一致
+                return render_api_content_template(
+                    config.get("content_template") or config.get("contentTemplate"),
+                    content,
+                    response.text,
+                )
                     
         except Exception as e:
             logger.error(f"调用卡券API失败: {e}")

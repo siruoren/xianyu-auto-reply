@@ -29,7 +29,10 @@ from common.services.delivery_utils import (
     recursive_replace_params,
     replace_order_context_variables,
 )
-from common.utils.response_field import extract_card_api_response_content
+from common.utils.response_field import (
+    extract_card_api_response_content,
+    render_api_content_template,
+)
 
 # API 取卡最大重试次数
 _API_MAX_RETRIES = 4
@@ -138,6 +141,12 @@ async def get_api_card_content(
 
         if status_code == 200:
             content = extract_card_api_response_content(response_text, response_field)
+            # 内容模板（选填）：支持 {api_content} 与 {api_json.路径} 变量拼接，空模板保持原行为
+            content = render_api_content_template(
+                api_config.get('content_template') or api_config.get('contentTemplate'),
+                content,
+                response_text,
+            )
             logger.info(f"API调用成功，返回内容长度: {len(content)}")
             return content
 

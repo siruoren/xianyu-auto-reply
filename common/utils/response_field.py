@@ -2,11 +2,19 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 
 RESPONSE_FIELD_EMPTY_MESSAGE = "响应字段取值失败为空"
 _MISSING = object()
+
+# 内容模板中代表"API提取后内容"的变量名
+API_CONTENT_VARIABLE = "api_content"
+# 内容模板中"原始JSON字段"变量的前缀，用法 {api_json.data.code}
+API_JSON_VARIABLE_PREFIX = "api_json."
+# 占位符匹配：花括号内不含花括号和换行
+_TEMPLATE_PLACEHOLDER = re.compile(r"\{([^{}\n]+)\}")
 
 
 def extract_card_api_response_content(response_text: str, response_field: str | None = None) -> str:
@@ -110,3 +118,43 @@ def stringify_response_value(value: Any) -> str:
         return json.dumps(value, ensure_ascii=False)
 
     return str(value)
+
+
+def render_api_content_template(template: str | None, content: str, response_text: str) -> str:
+    """渲染 API 卡券内容模板（api_config.content_template，选填）。
+
+    支持把 API 返回内容当作变量与固定文字拼接：
+    - {api_content}: 按响应字段/默认规则提取后的内容
+    - {api_json.路径}: 原始响应 JSON 中的任意字段值（如 {api_json.data.code}、{api_json.list[0].name}）
+
+    规则：
+    - 模板为空 → 原样返回提取内容（保持旧行为）
+    - 未知占位符原样保留，便于和固定文字混排
+    - api_json 取值失败（响应非 JSON / 路径缺失）替换为空字符串，不中断发货
+    """
+    normalized = (template or "").strip()
+    if not normalized:
+        return content
+
+    def _replace(match: re.Match[str]) -> str:
+        expr = match.group(1).strip()
+        if expr == API_CONTENT_VARIABLE:
+            return content
+        if expr.startswith(API_JSON_VARIABLE_PREFIX):
+            path = expr[len(API_JSON_VARIABLE_PREFIX):].strip()
+            if not path:
+                return ""
+            try:
+                data = json.loads(response_text)
+            except Exception:
+                return ""
+            value = get_response_field_value(data, path)
+            if value is _MISSING or value is None:
+                return ""
+            if isinstance(value, (dict, list)):
+                return json.dumps(value, ensure_ascii=False)
+            return "" if isinstance(value, str) and not value.strip() else str(value)
+        # 未知占位符原样保留
+        return match.group(0)
+
+    return _TEMPLATE_PLACEHOLDER.sub(_replace, normalized)

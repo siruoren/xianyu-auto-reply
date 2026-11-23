@@ -29,6 +29,7 @@ export interface CardData {
     headers?: string
     params?: string
     response_field?: string
+    content_template?: string  // 内容模板：{api_content}/{api_json.路径} 变量拼接
   }
   text_content?: string
   data_content?: string

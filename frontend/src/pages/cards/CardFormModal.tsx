@@ -49,6 +49,7 @@ interface CardFormData {
   apiHeaders: string
   apiParams: string
   apiResponseField: string
+  apiContentTemplate: string
   textContent: string
   dataContent: string
   imageUrls: string[]
@@ -93,6 +94,7 @@ export function cardToFormData(card: CardData): CardFormData {
     apiHeaders: card.api_config?.headers || '',
     apiParams: card.api_config?.params || '',
     apiResponseField: card.api_config?.response_field || '',
+    apiContentTemplate: card.api_config?.content_template || '',
     textContent: card.text_content || '',
     dataContent: card.data_content || '',
     imageUrls: imageUrlsList,
@@ -127,6 +129,7 @@ export const emptyCardFormData: CardFormData = {
   apiHeaders: '',
   apiParams: '',
   apiResponseField: '',
+  apiContentTemplate: '',
   textContent: '',
   dataContent: '',
   imageUrls: [],
@@ -301,6 +304,7 @@ export function CardFormModal({ cardId, initialData, onClose, onSaved }: CardFor
           headers: formData.apiHeaders.trim() || undefined,
           params: formData.apiParams.trim() || undefined,
           response_field: formData.apiResponseField.trim() || undefined,
+          content_template: formData.apiContentTemplate.trim() || undefined,
         }
       } else if (formData.type === 'text') {
         cardData.text_content = formData.textContent.trim()
@@ -461,6 +465,26 @@ export function CardFormModal({ cardId, initialData, onClose, onSaved }: CardFor
                     <p className="text-amber-600 dark:text-amber-400">
                       注意：接口返回纯文本时若填写本字段，会因无法解析而取值失败，请务必留空。
                     </p>
+                  </div>
+                </div>
+                <div>
+                  <label className="input-label">内容模板（选填）</label>
+                  <textarea
+                    value={formData.apiContentTemplate}
+                    onChange={(e) => updateField('apiContentTemplate', e.target.value)}
+                    className="input-ios min-h-[72px]"
+                    placeholder={'感谢购买，您的卡密：{api_content}\n备用码：{api_json.data.backup}'}
+                  />
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 space-y-1 leading-relaxed">
+                    <p>用固定文字加变量拼接最终发出的卡券内容，留空则直接发出接口返回的内容。</p>
+                    <p>
+                      可用变量：
+                      <code className="mx-1 px-1 rounded bg-slate-100 dark:bg-slate-700">{'{api_content}'}</code>
+                      接口提取后的卡密内容；
+                      <code className="mx-1 px-1 rounded bg-slate-100 dark:bg-slate-700">{'{api_json.路径}'}</code>
+                      原始JSON中的任意字段，如 <code className="px-1 rounded bg-slate-100 dark:bg-slate-700">{'{api_json.data.code}'}</code>。
+                    </p>
+                    <p>变量取值失败时替换为空文本；未识别的花括号内容会原样保留。</p>
                   </div>
                 </div>
               </div>
