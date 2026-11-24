@@ -1043,3 +1043,55 @@ class CardService:
         except Exception as e:
             logger.error(f"调用卡券API失败: {e}")
             return None
+
+    async def preview_api_content(self, api_config: dict) -> dict:
+        """预览API卡券内容：实时请求接口，返回提取内容与模板拼接后的完整内容（不消耗卡密）
+
+        与真实发货链路对齐：GET 用 params 作为查询串，POST 用 params 作为 JSON 请求体；
+        参数中的订单变量（如 {order_id}）预览时按原文发送。
+        """
+        import httpx
+
+        config = dict(api_config or {})
+        url = (config.get("url") or "").strip()
+        if not url:
+            return {"success": False, "message": "接口地址不能为空"}
+
+        # 表单里 headers/params 是 JSON 字符串，统一解析为 dict
+        for key in ("headers", "params"):
+            value = config.get(key)
+            if isinstance(value, str):
+                try:
+                    config[key] = json.loads(value) if value.strip() else {}
+                except Exception as e:
+                    return {"success": False, "message": f"{key} 不是合法的 JSON：{e}"}
+
+        method = (config.get("method") or "GET").upper()
+        headers = config.get("headers") or {}
+        params = config.get("params") or {}
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                if method == "GET":
+                    response = await client.get(url, headers=headers, params=params)
+                elif method == "POST":
+                    response = await client.post(url, headers=headers, json=params)
+                else:
+                    return {"success": False, "message": f"不支持的请求方法：{method}"}
+                response.raise_for_status()
+        except Exception as e:
+            return {"success": False, "message": f"接口请求失败：{e}"}
+
+        response_text = response.text
+        response_field = config.get("response_field") or config.get("responseField")
+        content = extract_card_api_response_content(response_text, response_field)
+        final_content = render_api_content_template(
+            config.get("content_template") or config.get("contentTemplate"),
+            content,
+            response_text,
+        )
+        return {
+            "success": True,
+            "raw_response": response_text[:2000],
+            "extracted": content,
+            "final_content": final_content,
+        }

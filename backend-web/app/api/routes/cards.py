@@ -73,6 +73,11 @@ class BatchDeleteRequest(BaseModel):
     ids: List[int]
 
 
+class CardApiPreviewRequest(BaseModel):
+    """API卡券内容预览请求：携带表单当前填写的 api_config（未保存也可预览）"""
+    api_config: Dict[str, Any]
+
+
 class BatchSaveCardRequest(BaseModel):
     """批量保存卡券请求"""
     item_ids: List[str]
@@ -182,6 +187,19 @@ async def get_cards(
         card_type=card_type,
         lite=lite,
     )
+    return result
+
+
+@router.post("/preview-api-content")
+async def preview_api_content(
+    request: CardApiPreviewRequest,
+    current_user: User = Depends(deps.get_current_active_user),
+    card_service: CardService = Depends(get_card_service),
+):
+    """预览API卡券内容：实时请求接口并返回模板拼接后的完整内容（不消耗卡密）"""
+    result = await card_service.preview_api_content(request.api_config)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("message", "预览失败"))
     return result
 
 

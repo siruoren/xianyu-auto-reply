@@ -7,7 +7,7 @@
 import { useState, useEffect } from 'react'
 import type { FormEvent, ChangeEvent } from 'react'
 import { X, Loader2, ImagePlus } from 'lucide-react'
-import { updateCard, createCard, uploadCardImage, type CardData } from '@/api/cards'
+import { updateCard, createCard, uploadCardImage, previewApiContent, type CardData, type ApiContentPreviewResult } from '@/api/cards'
 import { useUIStore } from '@/store/uiStore'
 import { Select } from '@/components/common/Select'
 import { getSystemSettings } from '@/api/settings'
@@ -149,6 +149,41 @@ export const emptyCardFormData: CardFormData = {
 export function CardFormModal({ cardId, initialData, onClose, onSaved }: CardFormModalProps) {
   const { addToast } = useUIStore()
   const [formData, setFormData] = useState<CardFormData>(initialData)
+  // API内容预览状态
+  const [apiPreviewLoading, setApiPreviewLoading] = useState(false)
+  const [apiPreviewResult, setApiPreviewResult] = useState<ApiContentPreviewResult | null>(null)
+  const [apiPreviewError, setApiPreviewError] = useState('')
+
+  // 预览API卡券拼接内容：实时请求接口（不保存、不消耗卡密）
+  const handlePreviewApiContent = async () => {
+    if (!formData.apiUrl.trim()) {
+      setApiPreviewResult(null)
+      setApiPreviewError('请先填写接口地址')
+      return
+    }
+    setApiPreviewLoading(true)
+    setApiPreviewError('')
+    try {
+      const result = await previewApiContent({
+        url: formData.apiUrl.trim(),
+        method: formData.apiMethod,
+        headers: formData.apiHeaders.trim() || undefined,
+        params: formData.apiParams.trim() || undefined,
+        response_field: formData.apiResponseField.trim() || undefined,
+        content_template: formData.apiContentTemplate.trim() || undefined,
+      })
+      setApiPreviewResult(result)
+    } catch (err) {
+      const message = (err as { response?: { data?: { detail?: string } }; message?: string })?.response?.data?.detail
+        || (err as { message?: string })?.message
+        || '预览请求失败'
+      setApiPreviewResult(null)
+      setApiPreviewError(message)
+    } finally {
+      setApiPreviewLoading(false)
+    }
+  }
+
   const [saving, setSaving] = useState(false)
   const [feeRate, setFeeRate] = useState('')
   const [feeType, setFeeType] = useState('fixed')
@@ -485,6 +520,32 @@ export function CardFormModal({ cardId, initialData, onClose, onSaved }: CardFor
                       原始JSON中的任意字段，如 <code className="px-1 rounded bg-slate-100 dark:bg-slate-700">{'{api_json.data.code}'}</code>。
                     </p>
                     <p>变量取值失败时替换为空文本；未识别的花括号内容会原样保留。</p>
+                  </div>
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      onClick={handlePreviewApiContent}
+                      disabled={apiPreviewLoading}
+                      className="px-3 py-1.5 text-sm rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 transition-colors inline-flex items-center gap-1.5"
+                    >
+                      {apiPreviewLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      {apiPreviewLoading ? '请求中…' : '预览拼接内容'}
+                    </button>
+                    {apiPreviewError && (
+                      <p className="mt-2 text-xs text-red-500">{apiPreviewError}</p>
+                    )}
+                    {apiPreviewResult && (
+                      <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg space-y-2">
+                        <div>
+                          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">拼接结果（实际发出的内容）：</p>
+                          <pre className="text-sm whitespace-pre-wrap break-all text-slate-800 dark:text-slate-100">{apiPreviewResult.final_content || '（空）'}</pre>
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1 break-all">
+                          <p>提取内容：{apiPreviewResult.extracted || '（空）'}</p>
+                          <p>原始响应：{apiPreviewResult.raw_response || '（空）'}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

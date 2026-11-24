@@ -161,6 +161,19 @@ export const batchDeleteCards = (cardIds: number[]): Promise<ApiResponse> => {
   return post(`${CARD_PREFIX}/batch-delete`, { ids: cardIds })
 }
 
+// API卡券内容预览结果
+export interface ApiContentPreviewResult {
+  success: boolean
+  raw_response?: string   // 接口原始响应（截断至2000字符）
+  extracted?: string      // 按响应字段提取后的内容
+  final_content?: string  // 模板拼接后的完整内容（实际发出的内容）
+}
+
+// 预览API卡券内容：实时请求接口并返回模板拼接结果（不保存、不消耗卡密）
+export const previewApiContent = (apiConfig: Record<string, unknown>): Promise<ApiContentPreviewResult> => {
+  return post(`${CARD_PREFIX}/preview-api-content`, { api_config: apiConfig })
+}
+
 // 上传卡券图片
 export const uploadCardImage = async (file: File): Promise<{ success: boolean; image_url?: string; message?: string }> => {
   const formData = new FormData()
